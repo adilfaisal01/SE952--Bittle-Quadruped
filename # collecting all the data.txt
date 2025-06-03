@@ -1,0 +1,35 @@
+# collecting all the data
+from PetoiRobot import *
+import csv
+import time
+
+autoConnect() #connect the robot to the relevant serial port on the PC
+# sendCmdStr('c',1) #calibration before movement
+time.sleep(0.02)
+
+sendCmdStr('c',1)
+sendSkillStr('ktrF', 1) # send trotting/crawling command to the robot
+# sendSkillStr('ktrF', 1) # send trotting/crawling command to the robot
+
+with open('angle_log_trotdd.csv', mode='w', newline='') as file:
+    writer = csv.writer(file)
+    header = ['timestamp'] + [f'joint_{i}' for i in range(16)]
+    writer.writerow(header)
+
+    duration = 30  # seconds to record
+    interval = 0.02  # time between samples
+
+    start_time = time.time()
+    print("Walking... logging joint angles:")
+
+    while time.time() - start_time < duration:
+        angles = getAngleList()  # Returns a list of 16 joint angles
+        timestamp = round(time.time() - start_time, 2)
+        print(f"[{timestamp}s] {angles}")
+        writer.writerow([timestamp] + angles)
+        time.sleep(interval)
+
+
+sendCmdStr('d',2) #settle the robot down and turn of the servos
+closePort() # close the serial ports
+print('success') #code completed, end of code
