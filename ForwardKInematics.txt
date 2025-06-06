@@ -1,0 +1,118 @@
+import pandas as pd
+import numpy as np
+from numpy import sin, cos
+import matplotlib.pyplot as plt
+
+## need to use forward kinematics to determine x,y,z position
+
+# robot measurements obtained using Digimizer in mm
+hiplength=47.9 #(L1)
+kneelength= 46.5 #(L2)
+bodywidth= 90.7
+bodylength= 104
+hipz=-20  ## to be tweaked after
+
+# dictionary data type, defining the limbs relative to the center of the robot
+JointOffsets={"Front Right":{"x_offset":bodylength/2, "y_offset":-bodywidth/2, "z_offset":hipz,"Hip Index":9, "Knee Index":13}, 
+              "Front Left":{"x_offset":bodylength/2, "y_offset":bodywidth/2, "z_offset":hipz,"Hip Index":8, "Knee Index":12},
+              "Rear Right":{"x_offset":-bodylength/2, "y_offset":-bodywidth/2, "z_offset":hipz,"Hip Index":10, "Knee Index":14},
+              "Rear Left":{"x_offset":-bodylength/2, "y_offset":bodywidth/2, "z_offset":hipz,"Hip Index":11, "Knee Index":15}}
+
+# servo angles are given in degrees, so this function converts to radians and does all the processing for the joints from the bittle
+
+def RawJointAngleProcessed(run):
+    runjoint=[]
+    for i in range(8,16):
+        angle_radians=np.array(np.deg2rad(run[f'joint_{i}']))
+        runjoint.append(angle_radians)
+    indices_flipper=[]
+    for name,info in JointOffsets.items():
+        if "Right" in name:
+            print (f"{name} CCW is -ve for you")
+            indices=[info["Hip Index"], info["Knee Index"]]
+            indices_flipper.append(indices)
+                        
+    indices_flipper=np.array(indices_flipper).flatten()-8  ## since we are staring the count leg joint, we discarded the first 8 joints from the petoi bittle for now
+
+    for i in range(0,8):
+        if i in indices_flipper:
+            runjoint[i]=runjoint[i]*1 # correction for the right side so that it follows the CCW positive convention
+        else:
+            runjoint[i]=runjoint[i]*1 # left side CCW is already +ve, so no need for correction here
+    return np.array(runjoint)
+
+
+# x0,y0,z0= offset from origin to hip joint
+# theta 1= angle of hip joint (radians)
+# L1= hip length
+# L2= knee length
+# theta 2= angle of knee relative to hip (radians)
+
+# find the foot position relative to the robot origin even as it moves
+
+def HomogeneousTransforms(Legname,runarray,L1=hiplength,L2=kneelength):
+    if type(Legname)!= str:
+        print('AHHHH IT HURTS')
+    else:
+        x0=JointOffsets[Legname]["x_offset"]
+        y0=JointOffsets[Legname]["y_offset"]
+        z0=JointOffsets[Legname]["z_offset"]
+        placements=[JointOffsets[Legname]["Hip Index"]-8, JointOffsets[Legname]['Knee Index']-8]
+        theta1= runarray[placements[0]]
+        theta2=runarray[placements[1]]
+
+        T_offset=np.array([[1,0,0,x0],[0,1,0,y0],[0,0,1,z0],[0,0,0,1]])
+        Rot1=np.array([[cos(theta1),0,sin(theta1),0],[0,1,0,0],[-sin(theta1),0,cos(theta1),0],[0,0,0,1]])
+        T_hiptoknee=np.array([[1,0,0,0],[0,1,0,0],[0,0,1,-L1],[0,0,0,1]])
+        Rot2=np.array([[cos(theta2),0,sin(theta2),0],[0,1,0,0],[-sin(theta2),0,cos(theta2),0],[0,0,0,1]])
+        T_kneetofoot=np.array([[1,0,0,L2],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
+
+    return T_offset@Rot1@T_hiptoknee@Rot2@T_kneetofoot
+
+
+# running the code
+run1=pd.read_csv('angle_log_walkForwardrun1.csv')
+run2=pd.read_csv('angle_log_walkForwardrun2.csv')
+run3=pd.read_csv('angle_log_walkForwardrun3.csv')
+
+
+
+
+
+## y and z look good, x should be moving upwards since the robot movies forwards in space, but since
+# one the right side CCW is negative, while on the left side CCW is positive
+# model generated was tested with 0,90,45 degree combinations and assuming the lengths to be constant at 1 and 2 mm, to make verification easier and tested on the hardware prototype
+# during the calibration pose, all the angles are zero
+
+
+# building a data set of foot positions for each foot, looping all the feet on the quadruped utilising the dictionary
+def LegSeparationFootPositions(run2):
+
+    time=run2['timestamp'] # system time
+    xxs=RawJointAngleProcessed(run2) # fully processed data for foot position calculations
+    t_total = xxs.shape[1]  # number of time steps
+    FTT=[]
+
+    for name in JointOffsets.keys():
+        foot_positions = []
+        for t in range(t_total):
+            pose=xxs[:,t]
+            T=HomogeneousTransforms(name,runarray=pose)
+            foot_positions.append(T[:,3])
+
+        foot_positions_xyz=np.array(foot_positions)[:,0:3]  # final foot positions in space
+        FTT.append(foot_positions_xyz)
+
+
+        plt.plot(list(time), foot_positions_xyz[:, 0],label='x',color='r') 
+        plt.plot(list(time), foot_positions_xyz[:, 1],label='y',color='b') 
+        plt.plot(list(time), foot_positions_xyz[:, 2],label='z',color='k') 
+
+        plt.xlabel('time (s)')
+        plt.ylabel('position (mm)')
+        plt.title(f'{name} Foot Trajectory Relative to robot origin')
+        plt.grid(True)
+        plt.legend()
+        plt.show()
+
+    return np.stack(FTT,axis=0),time # slapping all the foot positions for each position into a single 3d array with shape (4,timesteps,3), 4 for the number of feet, 3 for the xyz axes respectively
