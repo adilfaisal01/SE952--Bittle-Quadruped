@@ -4,18 +4,33 @@ from sklearn.preprocessing import StandardScaler
 import numpy as np
 from scipy.signal import medfilt
 from scipy.stats import norm
+from scipy.signal import butter,filtfilt
+
+# sources include Probabilistic Robotics and Google Machine Learning Course
+# Low pass inspired from junzis on Github (https://gist.github.com/junzis/e06eca03747fc194e322)
+# For walk gaits, the cutoff frequency is 1.9 Hz, and for trot, it is 4.5 Hz
+def lowpass(data,cutoff,sample_rate,order=4):
+    nyq=0.5*sample_rate #Nyquist frequency
+    normalcutoff=cutoff/nyq
+    b,a=butter(order,normalcutoff,btype='low',analog=False)
+    filtered_signal=filtfilt(b,a,data)
+    return filtered_signal
 
 DutyCycles=[]
 FTT,time=LegSeparationFootPositions(run3)
 
+
 for i in range(np.shape(FTT)[0]):
     limbnumb=i
     FR=FTT[i,:,2] # choose which foot to be used by changing the first dimension
+        
+    time=list(time)
+    Freq=len(FR)/(time[-1]-time[1]) # calculating frequency in hz
+
+    FR=lowpass(FR,cutoff=1.9,sample_rate=Freq)
     scale=StandardScaler()
     FR=FR.reshape(-1,1)
     FR = scale.fit_transform(FR)  # scale first
-
-
     FRKmeans=KMeans(n_clusters=2,random_state=42,n_init='auto')
     FRKmeans.fit(FR)
     labels = FRKmeans.labels_
