@@ -28,6 +28,29 @@ from inversegait import PD
 phased_legs=PD.phasedifference(footpos_mm,time,run1)
 print(phased_legs)
 
+def TrajectoryGeneratorSine(x_hopf,z_hopf,S,H,dutycycle):
+    XX=[]
+    ZZ=[]
+    
+    for i in range(len(x_hopf)):
+        phase_rad=np.arctan2(z_hopf[i],x_hopf[i]) #hopf oscillator tells the phase of the leg in radians 
+        phase_norm=(phase_rad+np.pi)/(2*np.pi)
+        x=S/2*np.cos(2*np.pi*phase_norm) #S= stride length (mm)
+
+        shifted_phase_norm=(phase_norm+0.5) %1 ## renormalize the phase norm since the original phase normalized has a half a cycle worth of discrepancy
+        if shifted_phase_norm < (1-dutycycle):
+            z = H * np.sin(2 * np.pi * shifted_phase_norm) #H is swing height (mm), swing phase runs this part
+            
+        else:
+            z = 0  # stance phase
+        XX.append(x)
+        ZZ.append(z)
+        
+
+    return XX,ZZ
+
+
+
 ## phase difference taken into account
 
 trot_phase_difference=np.array([0.496,0,0,0.496])*np.pi*2 #phase as a fraction of cycles is converted to radians for calculations
