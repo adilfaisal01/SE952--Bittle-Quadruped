@@ -7,7 +7,7 @@ from sklearn.preprocessing import StandardScaler
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 
-def duty_cycle_compute(run):
+def duty_cycle_compute(run,gaittype):
     DutyCycles=[]
     FTT,time=LegSeparationFootPositions(run)
     centroids=[]
@@ -19,7 +19,12 @@ def duty_cycle_compute(run):
         time=list(time)
         Freq=len(FR)/(time[-1]-time[1]) # calculating frequency in hz
 
-        FR=lowpass(FR,cutoff=4.5,sample_rate=Freq) #4.5 for trot, approximately 1.9 for walk
+        if gaittype=='walk':
+            FR=lowpass(FR,cutoff=1.9,sample_rate=Freq) #4.5 for trot, approximately 1.9 for walk
+        elif gaittype=='trot':
+            FR=lowpass(FR,cutoff=4.5,sample_rate=Freq)
+        elif type(gaittype)!=str:
+            print('error')
         scale=StandardScaler()
         FR=FR.reshape(-1,1)
         FR = scale.fit_transform(FR)  # scale first, uses the z=x-u/s, where x is the data point, u is the mean and s is the standard deviation
