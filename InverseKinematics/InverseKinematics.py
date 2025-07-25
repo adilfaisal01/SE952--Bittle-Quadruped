@@ -1,3 +1,6 @@
+import sympy as sp
+import numpy as np
+
 def InverseKinematics(x,z,xoffset,zoffset,L1,L2):
     # removing the offset
     x_local=x-xoffset
@@ -15,8 +18,7 @@ def InverseKinematics(x,z,xoffset,zoffset,L1,L2):
 ## Derived by solving the FK final equations as shown below through geometric methods (shown in IK_derivation.pdf)
 ## Symbolic forward Kinematics
 
-import sympy as sp
-import numpy as np
+
 
 # symbol definition
 L1,L2=sp.symbols('L1  L2')
