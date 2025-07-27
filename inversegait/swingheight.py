@@ -40,7 +40,7 @@ def clearanceheight(FTT,time,centroids):
 
     from scipy.signal import find_peaks
     troughs_height,_=find_peaks(-z_filtered,height=0)
-    mean_trough=np.mean(z_filtered[troughs_height])
+    mean_trough=np.abs(np.mean(z_filtered[troughs_height]))
 
     peaks_z,_=find_peaks(z_filtered,height=0)
     mean_peak=np.mean(z_filtered[peaks_z])
