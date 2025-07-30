@@ -239,6 +239,14 @@ plt.legend()
 
 plt.show()
 
+## All the positions generated here are pure positions of the foot with the average foot position being counted as the 0 point. To include the offsets, the equations should be updated as follows
+
+# x_abs=S/2*np.cos(2*np.pi*phase_norm)+x_hipoffset+x_COMshift #S= stride length (mm)
+#x_COMshift is mainly to indicate the shift seen during gait movement since during analysis it was noticed that the rear hips moved further from their initial position
+
+# z_abs_swing = H * np.sin(2 * np.pi * shifted_phase_norm)+z_robotheightfromground (-ve) +z_rest_footposition (-ve) , H is the clearance of the foot not the swing height (so how much below the neutral position does the foot move)
+
+# z_abs_stance =-H+z_robotheightfromground (-ve) +z_rest_footposition (-ve)
 
 
 
