@@ -5,7 +5,7 @@ hiplength=47.9 #(L1)
 kneelength= 46.5 #(L2)
 bodywidth= 90.7
 bodylength= 104
-hipz=-20  ## to be tweaked after
+hipz=-21.02  ## to be tweaked after
 
 # dictionary data type, defining the limbs relative to the center of the robot
 JointOffsets={"Front Right":{"x_offset":bodylength/2, "y_offset":-bodywidth/2, "z_offset":hipz,"Hip Index":9, "Knee Index":13}, 
