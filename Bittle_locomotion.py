@@ -50,7 +50,7 @@ class gaitParams:
     x_COMshift:float #shifting for rear legs in x direction (mm)
     robotheight: float #lift off the ground
     dutycycle:float #duration of stance per gait cycle (0.5-1)
-    forwardvel:float
+    forwardvel:float #forward velocity of the bot in mm/s
 
 
 class MotionPlanning:
