@@ -18,7 +18,7 @@ time = np.linspace(0, 10, 236)  # time in seconds
 dt = time[1] - time[0] #interval 
 
 # === Gait setup ===
-gait = gaitParams(S=70.1, H=5.678, x_COMshift=-20, robotheight=20, dutycycle=0.5815)
+gait = gaitParams(S=70.1, H=5.678, x_COMshift=-20, robotheight=20, dutycycle=0.5815,forwardvel=140)
 trot_phase_difference = np.array([0.496, 0, 0, 0.496]) * 2 * np.pi
 R_trot = connectionwieghtmatrixR(trot_phase_difference)
 
@@ -50,6 +50,7 @@ LegNames = ["Front Right", "Front Left", "Rear Right", "Rear Left"]
 # === Run trajectory + IK for all legs ===
 foot_trajectories = {}
 joint_angles = {}
+foot_global= {}
 
 for leg_index, leg_name in enumerate(LegNames):
     joint_offset = JointOffsets[leg_name]
@@ -72,8 +73,10 @@ for leg_index, leg_name in enumerate(LegNames):
 
     X_traj, Z_traj = mp.TrajectoryGenerator(x_hopf, z_hopf)
     theta_hip, theta_knee = mp.InverseKinematics(X_traj, Z_traj)
+    x_global,z_globl=mp.globalFootPos(X_traj,Z_traj,dt=dt)
 
     foot_trajectories[leg_name] = (X_traj, Z_traj)
+    foot_global[leg_name]=(x_global,z_globl)
     joint_angles[leg_name] = (theta_hip, theta_knee)
 
 # # === Plot all trajectories ===
@@ -97,22 +100,47 @@ for leg_name in LegNames:
     plt.figure(figsize=(20, 10))
 
     # === Subplot 1: X Position vs. Time ===
-    plt.subplot(2, 1, 1)
     plt.plot(time, X, label='X Position', color='tab:blue')
     plt.title(f"{leg_name} - Foot X Position Over Time")
-    plt.ylabel("X (mm)")
+    plt.ylabel("X_relative (mm)")
+    plt.grid(True)
+
+    # === Subplot 2: Z Position vs. Time ===
+    plt.plot(time, Z, label='Z Position', color='tab:red')
+    plt.title(f"{leg_name} - Foot Z Position Over Time")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Z_realtive (mm)")
+    plt.grid(True)
+
+    plt.tight_layout()
+    plt.show(block=False)
+    plt.pause(0.5)
+input("Press Enter to close all plots and exit...")
+
+for leg_name in LegNames:
+    X, Z =foot_global[leg_name]
+
+    plt.figure(figsize=(20, 10))
+
+    # === Subplot 1: X Position vs. Time ===
+    plt.subplot(2, 1, 1)
+    plt.plot(time, X, label='X Position', color='tab:blue')
+    plt.title(f"{leg_name} - Foot X Position Over Time-Global")
+    plt.ylabel("X_global (mm)")
     plt.grid(True)
 
     # === Subplot 2: Z Position vs. Time ===
     plt.subplot(2, 1, 2)
     plt.plot(time, Z, label='Z Position', color='tab:red')
-    plt.title(f"{leg_name} - Foot Z Position Over Time")
+    plt.title(f"{leg_name} - Foot Z Position Over Time--Global")
     plt.xlabel("Time (s)")
-    plt.ylabel("Z (mm)")
+    plt.ylabel("Z_global (mm)")
     plt.grid(True)
 
     plt.tight_layout()
-    plt.show()
+    plt.show(block=False)
+    plt.pause(0.5)
+input("Press Enter to close all plots and exit...")
 
 # # === Plot joint angles for each leg ===
 # fig, axs = plt.subplots(4, 1, figsize=(12, 20), sharex=True)
@@ -149,7 +177,7 @@ for leg_name in LegNames:
     plt.ylabel("Angle (deg)")
     plt.grid(True)
     plt.legend()
-
     plt.tight_layout()
-    plt.show()
-
+    plt.show(block=False)
+    plt.pause(0.5)
+input("Press Enter to close all plots and exit...")

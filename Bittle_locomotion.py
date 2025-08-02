@@ -50,6 +50,7 @@ class gaitParams:
     x_COMshift:float #shifting for rear legs in x direction (mm)
     robotheight: float #lift off the ground
     dutycycle:float #duration of stance per gait cycle (0.5-1)
+    forwardvel:float
 
 
 class MotionPlanning:
@@ -61,6 +62,7 @@ class MotionPlanning:
         self.L1=L1 #shoulder (hip) length in mm
         self.L2=L2 #elbow (knee) length in mm
         self.isRear=isRear #is it a rear leg
+        self.globalx=0 #global position of the x coord for the foot
         
 
     def TrajectoryGenerator(self,x_hopf,z_hopf):
@@ -88,7 +90,17 @@ class MotionPlanning:
             
 
         return XX,ZZ
-
+    
+    # updating the global position of the robot's feet, also provides a framework for adaptation to terrain by verying the z velocity being introduced as a parameter
+    def globalFootPos(self,x_relarr,z_relarr,dt):
+        x_global=[]
+        z_global=[]
+        
+        for x_rel,z_rel in zip(x_relarr,z_relarr):
+            self.globalx+=self.gait_pattern.forwardvel*dt
+            x_global.append(x_rel + self.globalx)
+            z_global.append(z_rel)
+        return x_global,z_global
 
 # x_abs=S/2*np.cos(2*np.pi*phase_norm)+x_hipoffset+x_COMshift #S= stride length (mm)
 #x_COMshift is mainly to indicate the shift seen during gait movement since during analysis it was noticed that the rear hips moved further from their initial position
