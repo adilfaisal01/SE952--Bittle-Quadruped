@@ -9,7 +9,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from Bittle_locomotion import hopf_cpg_dot, connectionwieghtmatrixR,MotionPlanning,gaitParams
+from Bittle_locomotion import HopfOscillator, connectionwieghtmatrixR,MotionPlanning,gaitParams
 from inversegait import JointOffsets, hiplength, kneelength
 
 
@@ -18,7 +18,8 @@ time = np.linspace(0, 10, 236)  # time in seconds
 dt = time[1] - time[0] #interval 
 
 # === Gait setup ===
-gait = gaitParams(S=70.1, H=5.678, x_COMshift=-20, robotheight=20, dutycycle=0.5815,forwardvel=140)
+gait = gaitParams(S=70.1, H=5.678, x_COMshift=-20, robotheight=20, dutycycle=0.5815,forwardvel=140,T=1/2.1)
+oscillator = HopfOscillator(gait_pattern=gait)
 trot_phase_difference = np.array([0.496, 0, 0, 0.496]) * 2 * np.pi
 R_trot = connectionwieghtmatrixR(trot_phase_difference)
 
@@ -33,11 +34,7 @@ Q_data = []
 for t_idx in range(len(time)):
     Q_data.append(Q.copy())
     if t_idx < len(time) - 1:
-        Q = hopf_cpg_dot(
-            Q, R=R_trot, delta=0.5,
-            dutycycle=gait.dutycycle, T=1/2.1,
-            b=50, mu=1, alpha=10, gamma=10, dt=dt
-        )
+        Q = oscillator.hopf_cpg_dot(Q, R=R_trot, delta=0.5,b=50, mu=1, alpha=10, gamma=10, dt=dt)
 Q_data = np.array(Q_data)
 
 # === Robot leg constants ===

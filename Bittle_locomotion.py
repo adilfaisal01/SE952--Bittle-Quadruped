@@ -15,25 +15,6 @@ def connectionwieghtmatrixR(phase_difference):
     return R
 
 
-def hopf_cpg_dot(Q,R,delta,dutycycle,T,b,mu,alpha,gamma,dt):
-    q_dot=np.zeros(8) #Q=[x1,y1,x2,y2,x3,y3,x4,y4]
-
-    for i in range(4):
-        xi=Q[2*i]
-        zi=Q[2*i+1]
-        q=np.array([[xi],[zi]])
-        r2=xi**2+zi**2
-        stance_denom=dutycycle*T*(np.exp(-b*zi)+1)
-        swing_denom=(1-dutycycle)*T*(np.exp(b*zi)+1)
-        omega=np.pi/stance_denom+np.pi/swing_denom
-        A=np.array([[alpha*(mu-r2),-omega],[omega,gamma*(mu-r2)]])
-        q_dot_first_term=A@q  # covers the first term in equation (9) from Zeng et. al
-        q_dot[2*i:2*i+2]=q_dot_first_term.flatten()
-    
-    # second term
-    q_dot += delta * R @ Q  
-    Q_new=Q+q_dot*dt
-    return Q_new
 
 
 ## leg geometric parameters included in the MotionPlanning class
@@ -51,7 +32,32 @@ class gaitParams:
     robotheight: float #lift off the ground
     dutycycle:float #duration of stance per gait cycle (0.5-1)
     forwardvel:float #forward velocity of the bot in mm/s
+    T: float #period of gait cycle
 
+
+class HopfOscillator:
+    def __init__(self,gait_pattern:gaitParams):
+        self.gait_pattern=gait_pattern
+    
+    def hopf_cpg_dot(self,Q,R,delta,b,mu,alpha,gamma,dt):
+        q_dot=np.zeros(8) #Q=[x1,y1,x2,y2,x3,y3,x4,y4]
+
+        for i in range(4):
+            xi=Q[2*i]
+            zi=Q[2*i+1]
+            q=np.array([[xi],[zi]])
+            r2=xi**2+zi**2
+            stance_denom=self.gait_pattern.dutycycle*self.gait_pattern.T*(np.exp(-b*zi)+1)
+            swing_denom=(1-self.gait_pattern.dutycycle)*self.gait_pattern.T*(np.exp(b*zi)+1)
+            omega=np.pi/stance_denom+np.pi/swing_denom
+            A=np.array([[alpha*(mu-r2),-omega],[omega,gamma*(mu-r2)]])
+            q_dot_first_term=A@q  # covers the first term in equation (9) from Zeng et. al
+            q_dot[2*i:2*i+2]=q_dot_first_term.flatten()
+        
+        # second term
+        q_dot += delta * R @ Q  
+        Q_new=Q+q_dot*dt
+        return Q_new
 
 class MotionPlanning:
     def __init__(self,gait_pattern:gaitParams,x_hipoffset,z_hipoffset,isRear,L1,L2,z_rest_foot):
