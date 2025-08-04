@@ -110,7 +110,7 @@ for leg_name in LegNames:
     plt.grid(True)
 
     plt.tight_layout()
-    plt.show(block=False)
+    plt.show(block='False')
     plt.pause(0.5)
 input("Press Enter to close all plots and exit...")
 
