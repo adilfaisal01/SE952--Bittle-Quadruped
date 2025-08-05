@@ -103,7 +103,7 @@ class Bittle:
 
     def spawn_bittle(self):
         """Create a fresh Bittle robot from USD, apply pose and appearance."""
-        usd_path = os.environ.get("ISAACSIM_PATH") + "/alpha/Bittle_URDF/bittle/bittle.usd"
+        usd_path = os.environ.get("ISAACSIM_PATH") + "/SE952--Bittle-Quadruped/Bittle_URDF/bittle/bittle.usd"
 
         if is_prim_path_valid(self.robot_prim):
             self.remove_prim_at_path(self.robot_prim)

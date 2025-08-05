@@ -1,12 +1,3 @@
-from omni.isaac.kit import SimulationApp
-
-SimulationApp({
-        "headless": False,
-        "hide_ui": True,
-        "window_width": 1280,
-        "window_height": 720,
-    })
-
 import time
 import numpy as np
 import omni.usd
