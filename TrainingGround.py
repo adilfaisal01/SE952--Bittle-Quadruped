@@ -175,7 +175,7 @@ class TrainingGround:
         max_x = +half - margin
         min_y = -half + margin
         max_y = +half - margin
-        z_local = 0.4  # relative to tile height
+        z_local = 0.0  # relative to tile height
 
         # Get world-space tile offset
         center = self.get_world_translation()

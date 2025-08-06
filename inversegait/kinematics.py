@@ -8,10 +8,10 @@ bodylength= 104
 hipz=-21.02  ## to be tweaked after
 
 # dictionary data type, defining the limbs relative to the center of the robot
-JointOffsets={"Front Right":{"x_offset":bodylength/2, "y_offset":-bodywidth/2, "z_offset":hipz,"Hip Index":9, "Knee Index":13}, 
-              "Front Left":{"x_offset":bodylength/2, "y_offset":bodywidth/2, "z_offset":hipz,"Hip Index":8, "Knee Index":12},
-              "Rear Right":{"x_offset":-bodylength/2, "y_offset":-bodywidth/2, "z_offset":hipz,"Hip Index":10, "Knee Index":14},
-              "Rear Left":{"x_offset":-bodylength/2, "y_offset":bodywidth/2, "z_offset":hipz,"Hip Index":11, "Knee Index":15}}
+JointOffsets={"Right Front":{"x_offset":bodylength/2, "y_offset":-bodywidth/2, "z_offset":hipz,"Hip Index":9, "Knee Index":13}, 
+              "Left Front":{"x_offset":bodylength/2, "y_offset":bodywidth/2, "z_offset":hipz,"Hip Index":8, "Knee Index":12},
+              "Right Back":{"x_offset":-bodylength/2, "y_offset":-bodywidth/2, "z_offset":hipz,"Hip Index":10, "Knee Index":14},
+              "Left Back":{"x_offset":-bodylength/2, "y_offset":bodywidth/2, "z_offset":hipz,"Hip Index":11, "Knee Index":15}}
 
 # x0,y0,z0= offset from origin to hip joint
 # theta 1= angle of hip joint (radians)
