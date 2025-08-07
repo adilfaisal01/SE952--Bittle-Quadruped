@@ -8,6 +8,8 @@
 
 
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # or 'Qt5Agg', 'Qt4Agg', depending on your system
 import matplotlib.pyplot as plt
 from Bittle_locomotion import HopfOscillator, connectionwieghtmatrixR,MotionPlanning,gaitParams
 from inversegait import JointOffsets, hiplength, kneelength
@@ -42,7 +44,7 @@ L1 = hiplength  # 47.9 mm
 L2 = kneelength # 46.5 mm
 z_rest_foot = -68.92
 
-LegNames = ["Front Right", "Front Left", "Rear Right", "Rear Left"]
+LegNames = ["Right Front", "Left Front", "Right Back", "Left Back"]
 
 # === Run trajectory + IK for all legs ===
 foot_trajectories = {}
@@ -53,7 +55,7 @@ for leg_index, leg_name in enumerate(LegNames):
     joint_offset = JointOffsets[leg_name]
     x_hipoffset = joint_offset["x_offset"]
     z_hipoffset = joint_offset["z_offset"]
-    isRear = "Rear" in leg_name
+    isRear = "Back" in leg_name
 
     x_hopf = Q_data[:, 2 * leg_index]
     z_hopf = Q_data[:, 2 * leg_index + 1]
@@ -160,7 +162,7 @@ for leg_name in LegNames:
 
     # Subplot 1: Hip angle
     plt.subplot(2, 1, 1)
-    plt.plot(np.degrees(hip), label="Hip", color="tab:blue")
+    plt.plot(hip, label="Hip", color="tab:blue")
     plt.title(f"{leg_name} - Hip Joint Angle")
     plt.ylabel("Angle (deg)")
     plt.grid(True)
@@ -168,7 +170,7 @@ for leg_name in LegNames:
 
     # Subplot 2: Knee angle
     plt.subplot(2, 1, 2)
-    plt.plot(np.degrees(knee), label="Knee", color="tab:green")
+    plt.plot(knee, label="Knee", color="tab:green")
     plt.title(f"{leg_name} - Knee Joint Angle")
     plt.xlabel("Time Step")
     plt.ylabel("Angle (deg)")

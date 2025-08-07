@@ -13,7 +13,7 @@ import numpy as np
 # environmental setup- spawning the bittle and ground
 e=Environment()
 # print("1",flush=True)
-e.add_training_grounds(n=1,size=12)
+e.add_training_grounds(n=1,size=20)
 # print("2",flush=True)
 e.add_bittles(n=1)
 # print("3",flush=True)
@@ -51,8 +51,9 @@ simulation_context = SimulationContext()
 
 
 # method 1 for testing: pre compute all the commands then send
-TIME= np.arange(1, 10+ 0.02, 0.02)  # from 1 to 10 with step 0.02 seconds0
 
+TIME=np.linspace(0,60,3000)
+tt=TIME[1]-TIME[0]
 
 Q = np.zeros(8)
 for i in range(4):
@@ -66,13 +67,13 @@ Q_data = []
 for t_idx in range(len(TIME)):
     Q_data.append(Q.copy())
     if t_idx < len(TIME) - 1:
-        Q = oscillator.hopf_cpg_dot(Q, R=R_trot, delta=0.3,b=50, mu=1, alpha=10, gamma=10, dt=0.05)
+        Q = oscillator.hopf_cpg_dot(Q, R=R_trot, delta=0.3,b=50, mu=1, alpha=10, gamma=10,dt=tt)
 Q_data = np.array(Q_data)
 
 # === Robot leg constants ===
 L1 = hiplength  # 47.9 mm
 L2 = kneelength # 46.5 mm
-z_rest_foot = -67.9
+z_rest_foot = -68.92
 
 LegNames = ["Right Front", "Left Front", "Right Back", "Left Back"]
 
@@ -80,10 +81,12 @@ LegNames = ["Right Front", "Left Front", "Right Back", "Left Back"]
 foot_trajectories = {}
 joint_angles = {}
 foot_global= {}
+max_angles={}
+min_angles={}
 
 for leg_index, leg_name in enumerate(LegNames):
     joint_offset = JointOffsets[leg_name]
-    x_hipoffset = joint_offset["x_offset"]
+    y_hipoffset = joint_offset["y_offset"]
     z_hipoffset = joint_offset["z_offset"]
     isRear = "Back" in leg_name
 
@@ -92,7 +95,7 @@ for leg_index, leg_name in enumerate(LegNames):
 
     mp = MotionPlanning(
         gait_pattern=gait,
-        x_hipoffset=x_hipoffset,
+        x_hipoffset=y_hipoffset,
         z_hipoffset=z_hipoffset,
         isRear=isRear,
         L1=L1,
@@ -105,9 +108,16 @@ for leg_index, leg_name in enumerate(LegNames):
 
     foot_trajectories[leg_name] = (X_traj, Z_traj)
     joint_angles[leg_name] = (theta_hip, theta_knee)
+    # max_angles[leg_name]=(max(theta_hip), max(theta_knee))
+    # min_angles[leg_name]=(min(theta_hip),min(theta_knee))
 
+# print(f' Max Angles={max_angles}')
+
+# print(f'Min angles={min_angles}')
 
 # map out all the joint indices based on the isaacsim bittle
+
+import time
 
 joint_index_map = {
     "Left Back": [0, 4],
@@ -121,26 +131,34 @@ joint_positions=np.zeros(8)
 prims.set_joint_positions(joint_positions, joint_indices=np.arange(8))
 
 
-import time
 
-for t_idx in range(len(TIME)):
-    joint_positions=np.zeros(8) #initiliaze the command per time step
+for t_dx in range(len(TIME)):
+    # joint_positions=np.zeros(8) #initiliaze the command per time step, 
+    # since IsaacSim doesnt have that built in flip, this code manually flips the commands to be sent, which needs to be addressed in the sim2real processs
 
     for leg_name in LegNames:
         hip_angle,knee_angle=joint_angles[leg_name]
-        joint_map=joint_index_map[leg_name]
-        joint_positions[joint_map[0]]=hip_angle[t_idx]
-        joint_positions[joint_map[1]]=knee_angle[t_idx]
-        print(joint_positions,flush=True)
 
-    prims.set_joint_positions(joint_positions.tolist(), joint_indices=np.arange(8))
+        if 'Right' in leg_name:
+            joint_map=joint_index_map[leg_name]
+            joint_positions[joint_map[0]]=-hip_angle[t_dx]
+            joint_positions[joint_map[1]]=-knee_angle[t_dx]
+            
+        else: 
+            joint_map=joint_index_map[leg_name]
+            joint_positions[joint_map[0]]=hip_angle[t_dx]
+            joint_positions[joint_map[1]]=knee_angle[t_dx]
+    
+    print(f'Controller sends:{joint_positions}',flush=True)
+    prims.set_joint_positions(joint_positions, joint_indices=np.arange(8))
+    cc_received=prims.get_joint_positions(joint_indices=np.arange(8))
+    print(f'Bittle receies={cc_received}',flush=True)
+
+   
     simulation_context.step(render=True)
-
-
-
         
-
-
+# while app.is_running:
+#     app.update()
         
 
 

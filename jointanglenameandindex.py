@@ -25,3 +25,7 @@ jointnames=prims.joint_names
 
 for JN in jointnames:
     print(f'joint name: {JN}, Index: {prims.get_joint_index(JN)}')
+
+print(f'Body COMs: {prims.get_body_coms()}')
+print(f': {prims.get_body_coms()}')
+
