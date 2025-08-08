@@ -114,7 +114,7 @@ class TrainingGround:
 
         apply_color_recursively(get_prim_at_path(self.path), self.color)
 
-    def set_friction_coeffs(self, static_friction=0.6, dynamic_friction=0.4):
+    def set_friction_coeffs(self, static_friction=0.9, dynamic_friction=0.78):
         root = self.prim
         binding_api = UsdShade.MaterialBindingAPI(root)
         material_tuple = binding_api.ComputeBoundMaterial()

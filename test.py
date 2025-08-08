@@ -52,7 +52,7 @@ simulation_context = SimulationContext()
 
 # method 1 for testing: pre compute all the commands then send
 
-TIME=np.linspace(0,60,3000)
+TIME=np.linspace(0,10,200)
 tt=TIME[1]-TIME[0]
 
 Q = np.zeros(8)
@@ -86,7 +86,7 @@ min_angles={}
 
 for leg_index, leg_name in enumerate(LegNames):
     joint_offset = JointOffsets[leg_name]
-    y_hipoffset = joint_offset["y_offset"]
+    x_hipoffset = joint_offset["x_offset"]
     z_hipoffset = joint_offset["z_offset"]
     isRear = "Back" in leg_name
 
@@ -95,7 +95,7 @@ for leg_index, leg_name in enumerate(LegNames):
 
     mp = MotionPlanning(
         gait_pattern=gait,
-        x_hipoffset=y_hipoffset,
+        x_hipoffset=x_hipoffset,
         z_hipoffset=z_hipoffset,
         isRear=isRear,
         L1=L1,
@@ -131,7 +131,7 @@ joint_positions=np.zeros(8)
 prims.set_joint_positions(joint_positions, joint_indices=np.arange(8))
 
 
-
+import time
 for t_dx in range(len(TIME)):
     # joint_positions=np.zeros(8) #initiliaze the command per time step, 
     # since IsaacSim doesnt have that built in flip, this code manually flips the commands to be sent, which needs to be addressed in the sim2real processs
@@ -149,6 +149,7 @@ for t_dx in range(len(TIME)):
             joint_positions[joint_map[0]]=hip_angle[t_dx]
             joint_positions[joint_map[1]]=knee_angle[t_dx]
     
+    time.sleep(0.100)
     print(f'Controller sends:{joint_positions}',flush=True)
     prims.set_joint_positions(joint_positions, joint_indices=np.arange(8))
     cc_received=prims.get_joint_positions(joint_indices=np.arange(8))

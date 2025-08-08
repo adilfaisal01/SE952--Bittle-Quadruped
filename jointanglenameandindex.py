@@ -2,7 +2,7 @@ from isaacsim import SimulationApp
 
 app= SimulationApp({
 "headless": False,
-"hide_ui": True})
+"hide_ui": False})
 
 
 from environment import Environment
@@ -26,6 +26,11 @@ jointnames=prims.joint_names
 for JN in jointnames:
     print(f'joint name: {JN}, Index: {prims.get_joint_index(JN)}')
 
-print(f'Body COMs: {prims.get_body_coms()}')
-print(f': {prims.get_body_coms()}')
+print(f'Body COMs: {prims.get_articulation_body_count()}')
+link_names= prims.body_names
+for LN in link_names:
+    print(f'link name: {LN}, Index: {prims.get_link_index(LN)}')
 
+while app.is_running:
+    app.update()
+        
