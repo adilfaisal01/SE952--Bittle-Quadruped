@@ -8,7 +8,7 @@ Haroon's Github: https://github.com/Dafodilrat
 
  
 To-do:
--[x] Building a pipeline to extract high-level gait params: stride length, clearance, robot height, forward velocity, gait frequency, duty cycle, rear center of mass (COM) shift, phase difference between legs
+- [x] Building a pipeline to extract high-level gait params: stride length, clearance, robot height, forward velocity, gait frequency, duty cycle, rear center of mass (COM) shift, phase difference between legs
 - [x] Establish a central pattern generator and trajectory generator for stable locomotion of the bot: used Modified Hopf oscillators from Zeng et al (https://www.mdpi.com/2076-3417/8/1/56)
 - [x] Built and showed the accuracy of the inverse kinematics model
 - [x] pipeline integrated with the IsaacSim environment created by Haroon and proven efficacy of the base model, making it RL-ready
