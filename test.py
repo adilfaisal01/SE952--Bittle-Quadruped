@@ -142,7 +142,7 @@ for t_dx in range(len(TIME)):
         if 'Right' in leg_name:
             joint_map=joint_index_map[leg_name]
             joint_positions[joint_map[0]]=-hip_angle[t_dx]
-            joint_positions[joint_map[1]]=knee_angle[t_dx]
+            joint_positions[joint_map[1]]=-knee_angle[t_dx]
             
         else: 
             joint_map=joint_index_map[leg_name]
