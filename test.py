@@ -18,9 +18,9 @@ e.add_training_grounds(n=1,size=20)
 e.add_bittles(n=1)
 # print("3",flush=True)
 
-gait = gaitParams(S=70.1, H=5.678, x_COMshift=-20, robotheight=20, dutycycle=0.5815,forwardvel=140,T=1/2.1)
+gait = gaitParams(S=70.1, H=5.678, x_COMshift=0, robotheight=20, dutycycle=0.5815,forwardvel=140,T=1/2.1)
 oscillator = HopfOscillator(gait_pattern=gait)
-trot_phase_difference = np.array([0.496, 0, 0, 0.496]) * 2 * np.pi
+trot_phase_difference = np.array([0, 0.496, 0.496, 0]) * 2 * np.pi
 R_trot = connectionwieghtmatrixR(trot_phase_difference)
 
 ## Joint names=['Left back','left front','right back','right front']
@@ -120,10 +120,10 @@ for leg_index, leg_name in enumerate(LegNames):
 import time
 
 joint_index_map = {
-    "Left Back": [0, 4],
+    "Right Front": [3, 7],
     "Left Front": [1, 5],
     "Right Back": [2, 6],
-    "Right Front": [3, 7],
+    "Left Back": [0, 4],
 }
 
 simulation_context.play()
@@ -142,7 +142,7 @@ for t_dx in range(len(TIME)):
         if 'Right' in leg_name:
             joint_map=joint_index_map[leg_name]
             joint_positions[joint_map[0]]=-hip_angle[t_dx]
-            joint_positions[joint_map[1]]=-knee_angle[t_dx]
+            joint_positions[joint_map[1]]=knee_angle[t_dx]
             
         else: 
             joint_map=joint_index_map[leg_name]
@@ -158,8 +158,8 @@ for t_dx in range(len(TIME)):
    
     simulation_context.step(render=True)
         
-# while app.is_running:
-#     app.update()
+while app.is_running:
+    app.update()
         
 
 
