@@ -122,16 +122,16 @@ class Environment:
             print("[Environment] Added physics scene", flush=True)
         wait_for_prim(self.physics)
 
-    def add_training_grounds(self, n=1, size=10.0):
+    def add_training_grounds(self,sf, df,n=1, size=10.0,terrain='plane'):
         """
         Create and register `n` training ground planes of given size.
         """
         self.training_grounds.clear()
         for i in range(n):
             try:
-                ground = TrainingGround(size=size)
+                ground = TrainingGround(static_friction=sf,dynamic_friction=df,size=size,type=terrain)
                 self.training_grounds.append(ground)
-                print(f"[Environment] Training ground {i} created at {ground.path}", flush=True)
+                print(f"[Environment] Training ground {i} created at {ground.prim_path}", flush=True)
             except Exception as e:
                 print(f"[Environment] Error creating training ground {i}:", e)
                 import traceback

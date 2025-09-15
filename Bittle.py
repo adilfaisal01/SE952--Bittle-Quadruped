@@ -62,9 +62,8 @@ class Bittle:
         norm = np.linalg.norm(quat)
         if norm < 1e-6:
             print(f"[WARNING] Zero-norm quaternion detected for {self.robot_prim}. Using identity rotation.")
-            quat = [0.0, 0.0, 0.0, 1.0]
-
-        r = R.from_quat(quat)
+            quat = [0.0, 0.0, 0.0, -1.0]
+            r = R.from_quat(quat)
         roll, pitch, yaw = r.as_euler('xyz', degrees=False)
 
         pos, _ = self.robot_view.get_world_poses()

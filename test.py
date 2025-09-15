@@ -9,16 +9,20 @@ from environment import Environment
 from Bittle_locomotion import gaitParams,HopfOscillator,MotionPlanning,connectionwieghtmatrixR
 from inversegait import JointOffsets, hiplength,kneelength
 import numpy as np
+from qt2euler import Quarternion2EulerAngles
+import matplotlib.pyplot as plt
+import csv
+
 
 # environmental setup- spawning the bittle and ground
 e=Environment()
 # print("1",flush=True)
-e.add_training_grounds(n=1,size=20)
+e.add_training_grounds(df=np.random.uniform(0.1,0.4),sf=np.random.uniform(0.5,0.8),n=1,size=20,terrain='mixedterrain')
 # print("2",flush=True)
 e.add_bittles(n=1)
 # print("3",flush=True)
 
-gait = gaitParams(S=70.1, H=5.678, x_COMshift=0, robotheight=20, dutycycle=0.5815,forwardvel=140,T=1/2.1)
+gait = gaitParams(H=20, x_COMshift=0, robotheight=20, dutycycle=0.5815,forwardvel=150,T=1/2.1)
 oscillator = HopfOscillator(gait_pattern=gait)
 trot_phase_difference = np.array([0, 0.496, 0.496, 0]) * 2 * np.pi
 R_trot = connectionwieghtmatrixR(trot_phase_difference)
@@ -29,7 +33,6 @@ R_trot = connectionwieghtmatrixR(trot_phase_difference)
 from isaacsim.core.prims import Articulation
 prims=Articulation(prim_paths_expr='/World/bittle0')
 jointnames=prims.joint_names
-
 
 # for JN in jointnames:
 #     print(f'joint name: {JN}, Index: {prims.get_joint_index(JN)}')
@@ -52,7 +55,7 @@ simulation_context = SimulationContext()
 
 # method 1 for testing: pre compute all the commands then send
 
-TIME=np.linspace(0,10,200)
+TIME=np.linspace(0,20,400)
 tt=TIME[1]-TIME[0]
 
 Q = np.zeros(8)
@@ -67,7 +70,7 @@ Q_data = []
 for t_idx in range(len(TIME)):
     Q_data.append(Q.copy())
     if t_idx < len(TIME) - 1:
-        Q = oscillator.hopf_cpg_dot(Q, R=R_trot, delta=0.3,b=50, mu=1, alpha=10, gamma=10,dt=tt)
+        Q = oscillator.hopf_cpg_dot(Q, R=R_trot, delta=0.3,b=500, mu=1, alpha=10, gamma=10,dt=tt)
 Q_data = np.array(Q_data)
 
 # === Robot leg constants ===
@@ -117,7 +120,15 @@ for leg_index, leg_name in enumerate(LegNames):
 
 # map out all the joint indices based on the isaacsim bittle
 
+
+#IMU path= /bittle/base_frame_link/mainboard_link/imu_link/Imu_Sensor
+#camera= /bittle/base_frame_link/Gemini2/Orbbec_Gemini2/camera_rgb/camera_rgb/Stream_rgb
+
 import time
+from isaacsim.sensors.physics import IMUSensor
+from isaacsim.sensors.camera import Camera
+
+
 
 joint_index_map = {
     "Right Front": [3, 7],
@@ -129,55 +140,85 @@ joint_index_map = {
 simulation_context.play()
 joint_positions=np.zeros(8)
 prims.set_joint_positions(joint_positions, joint_indices=np.arange(8))
+# rgb arrayshape, camera rgba array:(256, 256, 4)
 
+imu_bittle= IMUSensor(prim_path="/World/bittle0/base_frame_link/mainboard_link/imu_link/Imu_Sensor", name='imu',orientation=np.array([1,0,0,0]),frequency=1/0.01, linear_acceleration_filter_size=10, angular_velocity_filter_size=10,orientation_filter_size=10)
+imu_bittle.initialize()
+cam_bittle=Camera(prim_path="/World/bittle0/base_frame_link/Gemini2/camera_ir_left/camera_left",frequency=30,resolution=(256,256))
+cam_bittle.initialize()
 
 import time
-for t_dx in range(len(TIME)):
-    # joint_positions=np.zeros(8) #initiliaze the command per time step, 
-    # since IsaacSim doesnt have that built in flip, this code manually flips the commands to be sent, which needs to be addressed in the sim2real processs
+import imageio
+import os
 
-    for leg_name in LegNames:
-        hip_angle,knee_angle=joint_angles[leg_name]
+with open('sim_data_plane1','w',newline='') as csvfile:
+    csv1=csv.writer(csvfile)
+    header = [
+        'time_step',
+        'joint_pos_0', 'joint_pos_1', 'joint_pos_2', 'joint_pos_3',
+        'joint_pos_4', 'joint_pos_5', 'joint_pos_6', 'joint_pos_7',
+        'imu_roll', 'imu_pitch', 'imu_yaw',
+        'imu_ang_vel_x', 'imu_ang_vel_y', 'imu_ang_vel_z',
+        'linear_velocity_x', 'linear_velocity_y', 'linear_velocity_z',
+        'camera_image_file'
+    ]
+    csv1.writerow(header)
 
-        if 'Right' in leg_name:
-            joint_map=joint_index_map[leg_name]
-            joint_positions[joint_map[0]]=-hip_angle[t_dx]
-            joint_positions[joint_map[1]]=-knee_angle[t_dx]
-            
-        else: 
-            joint_map=joint_index_map[leg_name]
-            joint_positions[joint_map[0]]=hip_angle[t_dx]
-            joint_positions[joint_map[1]]=knee_angle[t_dx]
-    
-    time.sleep(0.100)
-    print(f'Controller sends:{joint_positions}',flush=True)
-    prims.set_joint_positions(joint_positions, joint_indices=np.arange(8))
-    cc_received=prims.get_joint_positions(joint_indices=np.arange(8))
-    print(f'Bittle receies={cc_received}',flush=True)
+    for t_dx in range(len(TIME)):
+        # joint_positions=np.zeros(8) #initiliaze the command per time step, 
+        # since IsaacSim doesnt have that built in flip, this code manually flips the commands to be sent, which needs to be addressed in the sim2real processs
 
-   
-    simulation_context.step(render=True)
+        for leg_name in LegNames:
+            hip_angle,knee_angle=joint_angles[leg_name]
+
+            if 'Right' in leg_name:
+                joint_map=joint_index_map[leg_name]
+                joint_positions[joint_map[0]]=-hip_angle[t_dx]
+                joint_positions[joint_map[1]]=-knee_angle[t_dx]
+                
+            else: 
+                joint_map=joint_index_map[leg_name]
+                joint_positions[joint_map[0]]=hip_angle[t_dx]
+                joint_positions[joint_map[1]]=knee_angle[t_dx]
         
+        # print(f'Controller sends:{joint_positions}',flush=True)
+        prims.set_gains(kps=np.array([30,30,30,30,30,30,30,30]),kds=np.array([2,2,2,2,2,2,2,2]),joint_indices=None)
+        prims.set_joint_position_targets(joint_positions, joint_indices=np.arange(8))
+        cc_received=prims.get_joint_positions(joint_indices=np.arange(8))
+        # print(prims.get_gains())
+        camera_array=cam_bittle.get_current_frame()
+        img=camera_array['rgba']
+        image_folder="/home/rastic/adil_RL/isaac-sim-standalone@4.5.0-rc.36+release.19112.f59b3005.gl.linux-x86_64.release/SE952--Bittle-Quadruped/camera_images_plane1"
+        imu_reading=imu_bittle.get_current_frame()
+
+        
+        
+        os.makedirs(image_folder,exist_ok=True)
+        image_filename = f"frame_{t_dx:04d}.png"
+        image_filepath = os.path.join(image_folder, image_filename)
+        imageio.imwrite(image_filepath, img[:, :, :3])
+        
+        row = [t_dx] + \
+                list(joint_positions) + \
+                list(Quarternion2EulerAngles(imu_reading['orientation'])) + \
+                list(imu_reading['ang_vel']) + \
+                list(prims.get_linear_velocities()) + \
+                [image_filepath]
+
+        csv1.writerow(row)
+
+        # # plt.imshow(img[:,:,:3])
+        # # plt.savefig("plot.png")  # Saves the figure to a file
+        # print(f"Imu readings orientation in euler: {np.rad2deg(Quarternion2EulerAngles(imu_reading['orientation']))}")
+        # print(f"Imu readings angular velocity in rad/s : {imu_reading['ang_vel']}")
+        # print(f'linear velocity in m/s:{prims.get_linear_velocities()}')
+
+
+    
+        simulation_context.step(render=True)
+        app.update()
+            
+print('wee wee')    
 while app.is_running:
     app.update()
         
-
-
-
-
-
-## we know the general template to move render the sim such that it renders with the bot in
-# while app.is_running():
-#     simulation_context.play()
-
-#     # NOTE: before interacting with dc directly you need to step physics for one step at least
-#     # simulation_context.step(render=True) which happens inside .play()
-#     for i in range(1000):
-#         prims.set_joint_positions([[-np.pi/2]], joint_indices=[2])
-#         prims.set_joint_positions([[-np.pi/2]], joint_indices=[6])
-
-#         simulation_context.step(render=True)
-#     simulation_context.stop()
-#     app.update()
-# app.close()
-

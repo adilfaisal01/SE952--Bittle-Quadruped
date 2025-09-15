@@ -36,7 +36,7 @@ class TrainingGround:
     _sync_seed = 42
 
     def __init__(self, size=10.0, color=(0.0, 0.0, 0.0), type="plane", static_friction=None, dynamic_friction=None):
-        if type not in ["plane", "rocky"]:
+        if type not in ["plane", "rocky","mixedterrain"]:
             raise ValueError(f"Invalid terrain type: {type}. Must be 'plane' or 'rocky'.")
         self.size = size
         self.color = color
@@ -72,28 +72,45 @@ class TrainingGround:
         return path, row, col, x, y
 
     def create_ground_plane(self):
-        sub_terrains = {
-            "plane": HfRandomUniformTerrainCfg(
-                proportion=1.0 if self.type == "plane" else 0.0,
-                noise_range=(0.0, 0.0),
-                noise_step=0.1,
-                horizontal_scale=0.1,
-                vertical_scale=0.005,
-                slope_threshold=0.0,
-            ),
-            "rocky": HfRandomUniformTerrainCfg(
-                proportion=1.0 if self.type == "rocky" else 0.0,
-                noise_range=(0.05, 0.20),
-                noise_step=0.05,
-                horizontal_scale=0.05,
-                vertical_scale=0.01,
-                slope_threshold=0.7,
-            )
-        }
+        
+        if self.type == "plane":
+            # Pure flat
+            sub_terrains = {
+                "plane": HfRandomUniformTerrainCfg(
+                    proportion       = 1.0,
+                    noise_range      = (0.0, 0.0),
+                    noise_step       = 0.1,
+                    horizontal_scale = 0.1,
+                    vertical_scale   = 0.0,
+                    slope_threshold  = 0.0,
+                )
+            }
 
+        else:  # mixedterrain
+            uy = np.random.uniform(0.2, 0.7)
+            print(f"[TrainingGround] Mixing plane={uy:.2f}, noisy={1-uy:.2f}")
+
+            sub_terrains = {
+                "plane": HfRandomUniformTerrainCfg(
+                    proportion       = uy,
+                    noise_range      = (0.0, 0.0),
+                    noise_step       = 0.1,
+                    horizontal_scale = 0.1,
+                    vertical_scale   = 0.0,
+                    slope_threshold  = 0.0,
+                ),
+                "mixedterrain": HfRandomUniformTerrainCfg(
+                    proportion       = 1.0 - uy,
+                    noise_range      = (0.01, 0.06),
+                    noise_step       = 0.005,
+                    horizontal_scale = 0.05,
+                    vertical_scale   = 0.01,
+                    slope_threshold  = 0.02,
+                ),
+            }
         gen_cfg = TerrainGeneratorCfg(
-            num_rows=1,
-            num_cols=1,
+            num_rows=8,
+            num_cols=8,
             size=(self.size, self.size),
             vertical_scale=0.005,
             color_scheme="none",

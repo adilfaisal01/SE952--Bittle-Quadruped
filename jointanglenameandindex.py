@@ -33,4 +33,22 @@ for LN in link_names:
 
 while app.is_running:
     app.update()
-        
+
+
+# from isaacsim.core.api import SimulationContext
+# simulation_context = SimulationContext()
+# simulation_context.play()
+# # we know the general template to move render the sim such that it renders with the bot in
+# while app.is_running():
+#     simulation_context.play()
+
+#     # NOTE: before interacting with dc directly you need to step physics for one step at least
+#     # simulation_context.step(render=True) which happens inside .play()
+#     for i in range(1000):
+#         prims.set_joint_positions([[np.pi/2]], joint_indices=[2])
+#         prims.set_joint_positions([[np.pi/2]], joint_indices=[6])
+
+#         simulation_context.step(render=True)
+#     simulation_context.stop()
+#     app.update()
+# app.close()

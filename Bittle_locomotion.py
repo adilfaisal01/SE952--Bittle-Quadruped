@@ -26,7 +26,6 @@ def connectionwieghtmatrixR(phase_difference):
 
 @dataclass
 class gaitParams:
-    S: float #stride length (mm)
     H: float #clearance (mm)
     x_COMshift:float #shifting for rear legs in x direction (mm)
     robotheight: float #lift off the ground
@@ -74,14 +73,14 @@ class MotionPlanning:
     def TrajectoryGenerator(self,x_hopf,z_hopf):
         XX=[]
         ZZ=[]
-        
+        S=self.gait_pattern.forwardvel*self.gait_pattern.T
         for i in range(len(x_hopf)):
             phase_rad=np.arctan2(z_hopf[i],x_hopf[i]) #hopf oscillator tells the phase of the leg in radians 
             phase_norm=(phase_rad+np.pi)/(2*np.pi)
             if self.isRear:
-                x=self.gait_pattern.S/2*np.cos(2*np.pi*phase_norm)+self.x_hipoffset+self.gait_pattern.x_COMshift 
+                x=S/2*np.cos(2*np.pi*phase_norm)+self.x_hipoffset+self.gait_pattern.x_COMshift
             else:
-                x=self.gait_pattern.S/2*np.cos(2*np.pi*phase_norm)+self.x_hipoffset #S= stride length (mm)
+                x=S/2*np.cos(2*np.pi*phase_norm)+self.x_hipoffset #S= stride length (mm)
 
             shifted_phase_norm=(phase_norm+0.5) %1 ## renormalize the phase norm since the original phase normalized has a half a cycle worth of discrepancy
             if shifted_phase_norm < (1-self.gait_pattern.dutycycle):
@@ -117,13 +116,14 @@ class MotionPlanning:
         theta2_list=[] #list of knee angles (radians)
         for x,z in zip(x_array,z_array):
             # removing the hip offsets
-
             x_local=x-self.x_hipoffset
             z_local=z-self.z_hipoffset
             
             # L1= hip to knee length, L2= knee to foot length
             r=np.sqrt(x_local**2+z_local**2)
+            r = np.clip(r, abs(self.L1 - self.L2) + 1e-6, self.L1 + self.L2 - 1e-6)  # small epsilon to avoid singularities
             p=(self.L2**2-self.L1**2-r**2)/(2*self.L1*r)
+            p=np.clip(p,-1.0,1.0)
             theta_1=np.arcsin(p)-np.arctan2(z_local,x_local)
             theta_2=np.arctan2(-(z_local+self.L1*np.cos(theta_1)),x_local+self.L1*np.sin(theta_1))-theta_1
 
