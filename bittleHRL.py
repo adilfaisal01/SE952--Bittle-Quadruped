@@ -183,7 +183,7 @@ class BittleHRLenv(gym.Env):
         vx,vy,vz=self.prims.get_linear_velocities() #linear velocities
         energy=float(np.sum(self.prims.get_joint_velocities(joint_indices=np.arange(8))**2)) #energy proxy term
         roll,pitch,yaw=self.orient #orientation data
-        w=np.array([5,-1,-1,0.001,-0.5,-0.5],dtype=float) #reward function weights
+        w=np.array([5,-1,-1,0.0001,-0.5,-0.5],dtype=float) #reward function weights
         r=np.array([vx,vy,vz,energy,np.abs(roll),np.abs(pitch)],dtype=float) #reward terms
         if self.time>=20 or np.abs(roll)>=np.pi/2 or np.abs(pitch)>=np.pi/2:
             done=True
