@@ -17,12 +17,12 @@ import csv
 # environmental setup- spawning the bittle and ground
 e=Environment()
 # print("1",flush=True)
-e.add_training_grounds(df=np.random.uniform(0.1,0.4),sf=np.random.uniform(0.5,0.8),n=1,size=20,terrain='mixedterrain')
+e.add_training_grounds(sf=0.7,df=0.2)
 # print("2",flush=True)
 e.add_bittles(n=1)
 # print("3",flush=True)
 
-gait = gaitParams(H=20, x_COMshift=0, robotheight=20, dutycycle=0.5815,forwardvel=150,T=1/2.1)
+gait = gaitParams(H=40, x_COMshift=0, robotheight=20, dutycycle=0.5815,forwardvel=200,T=1/2.1,yaw_rate=0)
 oscillator = HopfOscillator(gait_pattern=gait)
 trot_phase_difference = np.array([0, 0.496, 0.496, 0]) * 2 * np.pi
 R_trot = connectionwieghtmatrixR(trot_phase_difference)
@@ -55,7 +55,7 @@ simulation_context = SimulationContext()
 
 # method 1 for testing: pre compute all the commands then send
 
-TIME=np.linspace(0,20,400)
+TIME=np.linspace(0,20,500)
 tt=TIME[1]-TIME[0]
 
 Q = np.zeros(8)
@@ -91,6 +91,7 @@ for leg_index, leg_name in enumerate(LegNames):
     joint_offset = JointOffsets[leg_name]
     x_hipoffset = joint_offset["x_offset"]
     z_hipoffset = joint_offset["z_offset"]
+    y_hipoffset= joint_offset["y_offset"]
     isRear = "Back" in leg_name
 
     x_hopf = Q_data[:, 2 * leg_index]
@@ -103,7 +104,8 @@ for leg_index, leg_name in enumerate(LegNames):
         isRear=isRear,
         L1=L1,
         L2=L2,
-        z_rest_foot=z_rest_foot
+        z_rest_foot=z_rest_foot,
+        y_hipoffset=y_hipoffset
     )
 
     X_traj, Z_traj = mp.TrajectoryGenerator(x_hopf, z_hopf)
@@ -151,74 +153,78 @@ import time
 import imageio
 import os
 
-with open('sim_data_plane1','w',newline='') as csvfile:
-    csv1=csv.writer(csvfile)
-    header = [
-        'time_step',
-        'joint_pos_0', 'joint_pos_1', 'joint_pos_2', 'joint_pos_3',
-        'joint_pos_4', 'joint_pos_5', 'joint_pos_6', 'joint_pos_7',
-        'imu_roll', 'imu_pitch', 'imu_yaw',
-        'imu_ang_vel_x', 'imu_ang_vel_y', 'imu_ang_vel_z',
-        'linear_velocity_x', 'linear_velocity_y', 'linear_velocity_z',
-        'camera_image_file'
-    ]
-    csv1.writerow(header)
+# with open('sim_data_plane1.csv','w',newline='') as csvfile:
+#     csv1=csv.writer(csvfile)
+#     header = [
+#         'time_step',
+#         'joint_pos_0', 'joint_pos_1', 'joint_pos_2', 'joint_pos_3',
+#         'joint_pos_4', 'joint_pos_5', 'joint_pos_6', 'joint_pos_7',
+#         'imu_roll', 'imu_pitch', 'imu_yaw',
+#         'imu_ang_vel_x', 'imu_ang_vel_y', 'imu_ang_vel_z',
+#         'linear_velocity_x', 'linear_velocity_y', 'linear_velocity_z',
+#         'camera_image_file'
+#     ]
+#     csv1.writerow(header)
 
-    for t_dx in range(len(TIME)):
-        # joint_positions=np.zeros(8) #initiliaze the command per time step, 
-        # since IsaacSim doesnt have that built in flip, this code manually flips the commands to be sent, which needs to be addressed in the sim2real processs
+for t_dx in range(len(TIME)):
+    # joint_positions=np.zeros(8) #initiliaze the command per time step, 
+    # since IsaacSim doesnt have that built in flip, this code manually flips the commands to be sent, which needs to be addressed in the sim2real processs
 
-        for leg_name in LegNames:
-            hip_angle,knee_angle=joint_angles[leg_name]
+    for leg_name in LegNames:
+        hip_angle,knee_angle=joint_angles[leg_name]
 
-            if 'Right' in leg_name:
-                joint_map=joint_index_map[leg_name]
-                joint_positions[joint_map[0]]=-hip_angle[t_dx]
-                joint_positions[joint_map[1]]=-knee_angle[t_dx]
-                
-            else: 
-                joint_map=joint_index_map[leg_name]
-                joint_positions[joint_map[0]]=hip_angle[t_dx]
-                joint_positions[joint_map[1]]=knee_angle[t_dx]
-        
-        # print(f'Controller sends:{joint_positions}',flush=True)
-        prims.set_gains(kps=np.array([30,30,30,30,30,30,30,30]),kds=np.array([2,2,2,2,2,2,2,2]),joint_indices=None)
-        prims.set_joint_position_targets(joint_positions, joint_indices=np.arange(8))
-        cc_received=prims.get_joint_positions(joint_indices=np.arange(8))
-        # print(prims.get_gains())
-        camera_array=cam_bittle.get_current_frame()
-        img=camera_array['rgba']
-        image_folder="/home/rastic/adil_RL/isaac-sim-standalone@4.5.0-rc.36+release.19112.f59b3005.gl.linux-x86_64.release/SE952--Bittle-Quadruped/camera_images_plane1"
-        imu_reading=imu_bittle.get_current_frame()
-
-        
-        
-        os.makedirs(image_folder,exist_ok=True)
-        image_filename = f"frame_{t_dx:04d}.png"
-        image_filepath = os.path.join(image_folder, image_filename)
-        imageio.imwrite(image_filepath, img[:, :, :3])
-        
-        row = [t_dx] + \
-                list(joint_positions) + \
-                list(Quarternion2EulerAngles(imu_reading['orientation'])) + \
-                list(imu_reading['ang_vel']) + \
-                list(prims.get_linear_velocities()) + \
-                [image_filepath]
-
-        csv1.writerow(row)
-
-        # # plt.imshow(img[:,:,:3])
-        # # plt.savefig("plot.png")  # Saves the figure to a file
-        # print(f"Imu readings orientation in euler: {np.rad2deg(Quarternion2EulerAngles(imu_reading['orientation']))}")
-        # print(f"Imu readings angular velocity in rad/s : {imu_reading['ang_vel']}")
-        # print(f'linear velocity in m/s:{prims.get_linear_velocities()}')
-
+        if 'Right' in leg_name:
+            joint_map=joint_index_map[leg_name]
+            joint_positions[joint_map[0]]=-hip_angle[t_dx]
+            joint_positions[joint_map[1]]=-knee_angle[t_dx]
+            
+        else: 
+            joint_map=joint_index_map[leg_name]
+            joint_positions[joint_map[0]]=hip_angle[t_dx]
+            joint_positions[joint_map[1]]=knee_angle[t_dx]
+    
+    # print(f'Controller sends:{joint_positions}',flush=True)
+    prims.set_gains(kps=np.array([30,30,30,30,30,30,30,30]),kds=np.array([2,2,2,2,2,2,2,2]),joint_indices=None)
+    prims.set_joint_position_targets(joint_positions, joint_indices=np.arange(8))
+    cc_received=prims.get_joint_positions(joint_indices=np.arange(8))
+    print(cc_received.shape)
+    # print(prims.get_gains())
+    camera_array=cam_bittle.get_current_frame()
+    img=camera_array['rgba']
+    # image_folder="/home/rastic/adil_RL/isaac-sim-standalone@4.5.0-rc.36+release.19112.f59b3005.gl.linux-x86_64.release/SE952--Bittle-Quadruped/camera_images_plane1"
+    imu_reading=imu_bittle.get_current_frame()
 
     
-        simulation_context.step(render=True)
-        app.update()
-            
+    
+    # os.makedirs(image_folder,exist_ok=True)
+    # image_filename = f"frame_{t_dx:04d}.png"
+    # image_filepath = os.path.join(image_folder, image_filename)
+    # imageio.imwrite(image_filepath, img[:, :, :3])
+    
+    # row = [t_dx] + \
+    #         list(joint_positions) + \
+    #         list(Quarternion2EulerAngles(imu_reading['orientation'])) + \
+    #         list(imu_reading['ang_vel']) + \
+    #         list(prims.get_linear_velocities()) + \
+    #         [image_filepath]
+
+    # csv1.writerow(row)
+
+    # # plt.imshow(img[:,:,:3])
+    # # plt.savefig("plot.png")  # Saves the figure to a file
+    print(f"Imu readings orientation in euler: {np.rad2deg(Quarternion2EulerAngles(imu_reading['orientation']))}")
+    print(f"{type(np.rad2deg(Quarternion2EulerAngles((imu_reading['orientation'])[0])))}")
+    print(f"Imu readings angular velocity in rad/s : {imu_reading['ang_vel']}")
+
+    linvel=prims.get_linear_velocities()
+    print(f'linear velocity in m/s:{prims.get_linear_velocities()}')
+    print(f'linear velocity in y axis m/s:{type(linvel[:,1])}')
+
+
+    simulation_context.step(render=True)
+    app.update()
+        
 print('wee wee')    
 while app.is_running:
     app.update()
-        
+    

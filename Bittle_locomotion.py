@@ -31,7 +31,8 @@ class gaitParams:
     robotheight: float #lift off the ground
     dutycycle:float #duration of stance per gait cycle (0.5-1)
     forwardvel:float #forward velocity of the bot in mm/s
-    T: float #period of gait cycle
+    T: float #period of gait cycle in seconds
+    yaw_rate:float #yaw rate in rad/s, useful to make the robot turn
 
 
 class HopfOscillator:
@@ -59,11 +60,12 @@ class HopfOscillator:
         return Q_new
 
 class MotionPlanning:
-    def __init__(self,gait_pattern:gaitParams,x_hipoffset,z_hipoffset,isRear,L1,L2,z_rest_foot):
+    def __init__(self,gait_pattern:gaitParams,x_hipoffset,z_hipoffset,isRear,L1,L2,z_rest_foot,y_hipoffset):
         self.gait_pattern=gait_pattern 
         self.x_hipoffset=x_hipoffset #resting position of the foot
         self.z_rest_foot=z_rest_foot  
         self.z_hipoffset=z_hipoffset #derived from JointOffsets dictionary
+        self.y_hipoffset=y_hipoffset #derived from the Jointoffsets dictionary
         self.L1=L1 #shoulder (hip) length in mm
         self.L2=L2 #elbow (knee) length in mm
         self.isRear=isRear #is it a rear leg
@@ -73,7 +75,9 @@ class MotionPlanning:
     def TrajectoryGenerator(self,x_hopf,z_hopf):
         XX=[]
         ZZ=[]
-        S=self.gait_pattern.forwardvel*self.gait_pattern.T
+        S_body=self.gait_pattern.forwardvel*self.gait_pattern.T
+        dS=self.gait_pattern.yaw_rate*self.y_hipoffset*self.gait_pattern.T
+        S=S_body+dS
         for i in range(len(x_hopf)):
             phase_rad=np.arctan2(z_hopf[i],x_hopf[i]) #hopf oscillator tells the phase of the leg in radians 
             phase_norm=(phase_rad+np.pi)/(2*np.pi)
@@ -89,7 +93,7 @@ class MotionPlanning:
             else:
                 z = 0  # stance phase
 
-            z_corrected=z-self.gait_pattern.H+self.z_rest_foot-self.gait_pattern.robotheight #corrected to be absolute position of the foot
+            z_corrected=z-self.gait_pattern.H+self.z_rest_foot-self.gait_pattern.robotheight #corrected to be absolute position of the foot relative to robot origin
             XX.append(x)
             ZZ.append(z_corrected)
             

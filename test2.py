@@ -22,7 +22,10 @@ e.add_training_grounds(sf=np.random.uniform(0.5,0.8),df=np.random.uniform(0.2,0.
 # print("2",flush=True)
 e.add_bittles(n=1)
 
-
+from isaacsim.core.prims import Articulation
+prims=Articulation(prim_paths_expr='/World/bittle0')
+jointnames=prims.joint_names
+print(prims.get_dof_limits())
 
 while app.is_running:
     app.update()
