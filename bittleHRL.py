@@ -140,6 +140,7 @@ class BittleHRLenv(gym.Env):
         return self.Q
     
     def _joint_target_computation(self):
+        joint_positions=np.zeros(8)
         for leg_index, leg_name in enumerate(self.LegNames):
             joint_offset = JointOffsets[leg_name]
             x_hipoffset = joint_offset["x_offset"]
@@ -163,7 +164,7 @@ class BittleHRLenv(gym.Env):
 
             X_traj, Z_traj = mp.TrajectoryGenerator(x_hopf, z_hopf)
             theta_hip, theta_knee = mp.InverseKinematics(X_traj, Z_traj)
-            joint_positions=np.zeros(8)
+            
 
             if 'Right' in leg_name:
                 joint_map=self.joint_index_map[leg_name]
