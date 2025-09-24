@@ -114,7 +114,7 @@ class BittleHRLenv(gym.Env):
                 break
         observation=self._get_obs()
         info={}
-        return observation,R,done,info
+        return observation,R,done,False,info
 
 
     def _get_obs(self):
