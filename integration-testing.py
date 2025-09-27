@@ -8,8 +8,8 @@
 
 
 import numpy as np
-import matplotlib
-matplotlib.use('Agg')  # or 'Qt5Agg', 'Qt4Agg', depending on your system
+import matplotlib.pyplot as plt
+# matplotlib.use('Agg')  # or 'Qt5Agg', 'Qt4Agg', depending on your system
 import matplotlib.pyplot as plt
 from Bittle_locomotion import HopfOscillator, connectionwieghtmatrixR,MotionPlanning,gaitParams
 from inversegait import JointOffsets, hiplength, kneelength
@@ -20,7 +20,7 @@ time = np.linspace(0, 10, 236)  # time in seconds
 dt = time[1] - time[0] #interval 
 
 # === Gait setup ===
-gait = gaitParams(S=70.1, H=5.678, x_COMshift=-20, robotheight=20, dutycycle=0.5815,forwardvel=140,T=1/2.1)
+gait = gaitParams(H=5.678, x_COMshift=-20, robotheight=20, dutycycle=0.5815,forwardvel=140,T=1/2.1,yaw_rate=0)
 oscillator = HopfOscillator(gait_pattern=gait)
 trot_phase_difference = np.array([0.496, 0, 0, 0.496]) * 2 * np.pi
 R_trot = connectionwieghtmatrixR(trot_phase_difference)
@@ -55,6 +55,7 @@ for leg_index, leg_name in enumerate(LegNames):
     joint_offset = JointOffsets[leg_name]
     x_hipoffset = joint_offset["x_offset"]
     z_hipoffset = joint_offset["z_offset"]
+    y_hipoffset = joint_offset["y_offset"]
     isRear = "Back" in leg_name
 
     x_hopf = Q_data[:, 2 * leg_index]
@@ -64,6 +65,7 @@ for leg_index, leg_name in enumerate(LegNames):
         gait_pattern=gait,
         x_hipoffset=x_hipoffset,
         z_hipoffset=z_hipoffset,
+        y_hipoffset=y_hipoffset,
         isRear=isRear,
         L1=L1,
         L2=L2,
@@ -96,24 +98,28 @@ for leg_index, leg_name in enumerate(LegNames):
 for leg_name in LegNames:
     X, Z = foot_trajectories[leg_name]
 
-    plt.figure(figsize=(20, 10))
-
-    # === Subplot 1: X Position vs. Time ===
+    # === X Position Figure ===
+    plt.figure(figsize=(20, 5))
     plt.plot(time, X, label='X Position', color='tab:blue')
     plt.title(f"{leg_name} - Foot X Position Over Time")
+    plt.xlabel("Time (s)")
     plt.ylabel("X_relative (mm)")
     plt.grid(True)
+    plt.tight_layout()
+    plt.show(block=False)
+    plt.pause(0.5)
 
-    # === Subplot 2: Z Position vs. Time ===
+    # === Z Position Figure ===
+    plt.figure(figsize=(20, 5))
     plt.plot(time, Z, label='Z Position', color='tab:red')
     plt.title(f"{leg_name} - Foot Z Position Over Time")
     plt.xlabel("Time (s)")
-    plt.ylabel("Z_realtive (mm)")
+    plt.ylabel("Z_relative (mm)")
     plt.grid(True)
-
     plt.tight_layout()
-    plt.show(block='False')
+    plt.show(block=False)
     plt.pause(0.5)
+
 input("Press Enter to close all plots and exit...")
 
 for leg_name in LegNames:
