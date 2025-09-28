@@ -35,6 +35,9 @@ Using gait abstraction and Reinforcement learning for autonomous locomotion of B
 3. **Terrain Randomization**  
    Add procedural terrain generation to improve robustness and generalization of locomotion policies.
 
+### Acknowledgments:
+Big shoutout to @Dafodilrat for his help in setting up the isaacsim and Isaaclab pipelines for RL training
+
 ---
 
 *This repository leverages reinforcement learning and modular design to enable autonomous locomotion of the Bittle quadruped across varying terrains. For details, code, and usage, see the project files and comments.*
