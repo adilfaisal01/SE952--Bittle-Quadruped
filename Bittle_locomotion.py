@@ -45,6 +45,7 @@ class HopfOscillator:
         for i in range(4):
             xi=Q[2*i]
             zi=Q[2*i+1]
+            zi= np.clip(zi, -20, 20)  # or something reasonable
             q=np.array([[xi],[zi]])
             r2=xi**2+zi**2
             stance_denom=self.gait_pattern.dutycycle*self.gait_pattern.T*(np.exp(-b*zi)+1)
