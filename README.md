@@ -35,8 +35,19 @@ Using gait abstraction and Reinforcement learning for autonomous locomotion of B
 3. **Terrain Randomization**  
    Add procedural terrain generation to improve robustness and generalization of locomotion policies.
 
-### Acknowledgments:
-Big shoutout to [@Dafodilrat](https://github.com/Dafodilrat) for his help in setting up the isaacsim and Isaaclab pipelines for RL training
+## Contributors
+
+### [@adilfaisal01](https://github.com/adilfaisal01) — Maintainer
+- Developed the locomotion engine from raw Bittle data using signal processing, KMeans, and Bayesian inference.  
+- Integrated the locomotion engine into IsaacSim and IsaacLab.  
+- Implemented hierarchical control framework and gait abstraction modules.  
+- Refactored locomotion logic for vectorized execution and GPU-accelerated training.  
+- Designed custom Gym-style RL environment for policy training.
+
+### [@Dafodilrat](https://github.com/Dafodilrat)
+- Authored core simulator infrastructure: `environment.py`, `trainingground.py`, `tools.py`, and `bittle.py`.  
+- Provided IsaacSim/IsaacLab pipeline setup that served as the foundation for this project’s simulation environment.  
+- Contributed reusable utilities that accelerated simulator integration and RL experimentation.
 
 ---
 
