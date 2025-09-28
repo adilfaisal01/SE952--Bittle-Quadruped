@@ -36,7 +36,7 @@ Using gait abstraction and Reinforcement learning for autonomous locomotion of B
    Add procedural terrain generation to improve robustness and generalization of locomotion policies.
 
 ### Acknowledgments:
-Big shoutout to @Dafodilrat for his help in setting up the isaacsim and Isaaclab pipelines for RL training
+Big shoutout to [@Dafodilrat](https://github.com/Dafodilrat) for his help in setting up the isaacsim and Isaaclab pipelines for RL training
 
 ---
 
