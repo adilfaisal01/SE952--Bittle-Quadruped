@@ -18,7 +18,7 @@ from Bittle_locomotion import (
 )
 from inversegait import JointOffsets, hiplength, kneelength
 
-torch.manual_seed(40)
+# torch.manual_seed(40)
 # np.random.seed(42)
 
 # ===============================
@@ -111,6 +111,12 @@ z_traj_torch = torch.stack(z_traj_list)
 hip_torch = torch.stack(hip_list)
 knee_torch = torch.stack(knee_list)
 print(f'torch time execution={time.time()-torch_start} seconds')
+
+print(f'forward velocity: {gait_envs_torch.forwardvel} mm/s \n',
+      f'gait Period: {gait_envs_torch.T} s \n',
+      f'dutycycle: {gait_envs_torch.dutycycle} \n')
+
+
 # ===============================
 # NumPy Scalar Pipeline
 # ===============================
@@ -247,7 +253,7 @@ print(f'torch time execution={time.time()-torch_start} seconds')
 # # # ===============================
 for env in range(num_envs):
     fig, axs = plt.subplots(2 + 4 + 4, 1, figsize=(12, 24), sharex=True)
-    fig.suptitle(f"Environment {env+1}", fontsize=16)
+    fig.suptitle(f"Environment {env+1},f'forward velocity,period,dutycycle: {gait_envs_torch.forwardvel[env],gait_envs_torch.T[env],gait_envs_torch.dutycycle[env]}", fontsize=10)
 
     # --- X trajectory (all legs) ---
     for leg_idx, leg_name in enumerate(leg_names):
