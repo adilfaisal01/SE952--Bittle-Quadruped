@@ -31,12 +31,9 @@ dt = Time[1] - Time[0]
 leg_names = list(JointOffsets.keys())
 L1, L2 = hiplength, kneelength
 z_rest_foot = -68.92
-num_envs = 64
+num_envs = 32
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device='cpu'
-# Generate unique per-bot parameters
-num_envs = 64
-device = 'cpu'
 
 # Randomized parameters
 # H = torch.rand(num_envs, dtype=torch.float32, device=device) * 3 + 5        # clearance 5–8
