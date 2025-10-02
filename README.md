@@ -8,19 +8,16 @@ Using gait abstraction and Reinforcement learning for autonomous locomotion of B
 1. **Hierarchical Control Framework Established**  
    Modular control layers designed for scalable quadruped locomotion.
 
-2. **Sensor Integration through IsaacSim**  
-   Real-world sensor data now accessible via IsaacSim interfaces.
-
-3. **Reverse Engineered Locomotion Engine**  
+2. **Reverse Engineered Locomotion Engine**  
    Developed from raw Bittle data using advanced signal processing, KMeans clustering, and Bayesian inference.
 
-4. **Gait Abstraction Module Added**  
+3. **Gait Abstraction Module Added**  
    Created flexible routines for defining and switching between multiple gaits, enabling adaptive movement strategies.
 
-5. **Vectorized Locomotion Engine**  
+4. **Vectorized Locomotion Engine**  
    Refactored locomotion logic to support vectorized execution for GPU-accelerated training and evaluation.
 
-6. **Gym-Style RL Environment Implemented**  
+5. **Gym-Style RL Environment Implemented**  
    Custom RL environment built for training locomotion policies; initial implementation ready for migration to IsaacLab.
 
 ---
