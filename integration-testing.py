@@ -9,7 +9,9 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from Bittle_locomotion import hopf_cpg_dot, connectionwieghtmatrixR,MotionPlanning,gaitParams
+# matplotlib.use('Agg')  # or 'Qt5Agg', 'Qt4Agg', depending on your system
+import matplotlib.pyplot as plt
+from Bittle_locomotion import HopfOscillator, connectionwieghtmatrixR,MotionPlanning,gaitParams
 from inversegait import JointOffsets, hiplength, kneelength
 
 
@@ -18,7 +20,8 @@ time = np.linspace(0, 10, 236)  # time in seconds
 dt = time[1] - time[0] #interval 
 
 # === Gait setup ===
-gait = gaitParams(S=70.1, H=5.678, x_COMshift=-20, robotheight=20, dutycycle=0.5815)
+gait = gaitParams(H=5.678, x_COMshift=-20, robotheight=20, dutycycle=0.5815,forwardvel=140,T=1/2.1,yaw_rate=0)
+oscillator = HopfOscillator(gait_pattern=gait)
 trot_phase_difference = np.array([0.496, 0, 0, 0.496]) * 2 * np.pi
 R_trot = connectionwieghtmatrixR(trot_phase_difference)
 
@@ -33,11 +36,7 @@ Q_data = []
 for t_idx in range(len(time)):
     Q_data.append(Q.copy())
     if t_idx < len(time) - 1:
-        Q = hopf_cpg_dot(
-            Q, R=R_trot, delta=0.5,
-            dutycycle=gait.dutycycle, T=1/2.1,
-            b=50, mu=1, alpha=10, gamma=10, dt=dt
-        )
+        Q = oscillator.hopf_cpg_dot(Q, R=R_trot, delta=0.5,b=50, mu=1, alpha=10, gamma=10, dt=dt)
 Q_data = np.array(Q_data)
 
 # === Robot leg constants ===
@@ -45,17 +44,19 @@ L1 = hiplength  # 47.9 mm
 L2 = kneelength # 46.5 mm
 z_rest_foot = -68.92
 
-LegNames = ["Front Right", "Front Left", "Rear Right", "Rear Left"]
+LegNames = ["Right Front", "Left Front", "Right Back", "Left Back"]
 
 # === Run trajectory + IK for all legs ===
 foot_trajectories = {}
 joint_angles = {}
+foot_global= {}
 
 for leg_index, leg_name in enumerate(LegNames):
     joint_offset = JointOffsets[leg_name]
     x_hipoffset = joint_offset["x_offset"]
     z_hipoffset = joint_offset["z_offset"]
-    isRear = "Rear" in leg_name
+    y_hipoffset = joint_offset["y_offset"]
+    isRear = "Back" in leg_name
 
     x_hopf = Q_data[:, 2 * leg_index]
     z_hopf = Q_data[:, 2 * leg_index + 1]
@@ -64,6 +65,7 @@ for leg_index, leg_name in enumerate(LegNames):
         gait_pattern=gait,
         x_hipoffset=x_hipoffset,
         z_hipoffset=z_hipoffset,
+        y_hipoffset=y_hipoffset,
         isRear=isRear,
         L1=L1,
         L2=L2,
@@ -72,8 +74,10 @@ for leg_index, leg_name in enumerate(LegNames):
 
     X_traj, Z_traj = mp.TrajectoryGenerator(x_hopf, z_hopf)
     theta_hip, theta_knee = mp.InverseKinematics(X_traj, Z_traj)
+    x_global,z_globl=mp.globalFootPos(X_traj,Z_traj,dt=dt)
 
     foot_trajectories[leg_name] = (X_traj, Z_traj)
+    foot_global[leg_name]=(x_global,z_globl)
     joint_angles[leg_name] = (theta_hip, theta_knee)
 
 # # === Plot all trajectories ===
@@ -94,25 +98,54 @@ for leg_index, leg_name in enumerate(LegNames):
 for leg_name in LegNames:
     X, Z = foot_trajectories[leg_name]
 
+    # === X Position Figure ===
+    plt.figure(figsize=(20, 5))
+    plt.plot(time, X, label='X Position', color='tab:blue')
+    plt.title(f"{leg_name} - Foot X Position Over Time")
+    plt.xlabel("Time (s)")
+    plt.ylabel("X_relative (mm)")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show(block=False)
+    plt.pause(0.5)
+
+    # === Z Position Figure ===
+    plt.figure(figsize=(20, 5))
+    plt.plot(time, Z, label='Z Position', color='tab:red')
+    plt.title(f"{leg_name} - Foot Z Position Over Time")
+    plt.xlabel("Time (s)")
+    plt.ylabel("Z_relative (mm)")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show(block=False)
+    plt.pause(0.5)
+
+input("Press Enter to close all plots and exit...")
+
+for leg_name in LegNames:
+    X, Z =foot_global[leg_name]
+
     plt.figure(figsize=(20, 10))
 
     # === Subplot 1: X Position vs. Time ===
     plt.subplot(2, 1, 1)
     plt.plot(time, X, label='X Position', color='tab:blue')
-    plt.title(f"{leg_name} - Foot X Position Over Time")
-    plt.ylabel("X (mm)")
+    plt.title(f"{leg_name} - Foot X Position Over Time-Global")
+    plt.ylabel("X_global (mm)")
     plt.grid(True)
 
     # === Subplot 2: Z Position vs. Time ===
     plt.subplot(2, 1, 2)
     plt.plot(time, Z, label='Z Position', color='tab:red')
-    plt.title(f"{leg_name} - Foot Z Position Over Time")
+    plt.title(f"{leg_name} - Foot Z Position Over Time--Global")
     plt.xlabel("Time (s)")
-    plt.ylabel("Z (mm)")
+    plt.ylabel("Z_global (mm)")
     plt.grid(True)
 
     plt.tight_layout()
-    plt.show()
+    plt.show(block=False)
+    plt.pause(0.5)
+input("Press Enter to close all plots and exit...")
 
 # # === Plot joint angles for each leg ===
 # fig, axs = plt.subplots(4, 1, figsize=(12, 20), sharex=True)
@@ -135,7 +168,7 @@ for leg_name in LegNames:
 
     # Subplot 1: Hip angle
     plt.subplot(2, 1, 1)
-    plt.plot(np.degrees(hip), label="Hip", color="tab:blue")
+    plt.plot(hip, label="Hip", color="tab:blue")
     plt.title(f"{leg_name} - Hip Joint Angle")
     plt.ylabel("Angle (deg)")
     plt.grid(True)
@@ -143,13 +176,13 @@ for leg_name in LegNames:
 
     # Subplot 2: Knee angle
     plt.subplot(2, 1, 2)
-    plt.plot(np.degrees(knee), label="Knee", color="tab:green")
+    plt.plot(knee, label="Knee", color="tab:green")
     plt.title(f"{leg_name} - Knee Joint Angle")
     plt.xlabel("Time Step")
     plt.ylabel("Angle (deg)")
     plt.grid(True)
     plt.legend()
-
     plt.tight_layout()
-    plt.show()
-
+    plt.show(block=False)
+    plt.pause(0.5)
+input("Press Enter to close all plots and exit...")
