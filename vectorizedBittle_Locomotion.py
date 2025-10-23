@@ -93,8 +93,8 @@ class VectorizedHopfOscillator:
         T = self.gait_pattern.T.float().unsqueeze(1)
 
         # FORCED float32 exponentials
-        exp_neg = torch.exp(-b * z_all).float()
-        exp_pos = torch.exp(b * z_all).float()
+        exp_neg = torch.exp(-b * z_all_clamped).float()
+        exp_pos = torch.exp(b * z_all_clamped).float()
         
         stance_denom = (dutycycle * T * (exp_neg + torch.tensor(1.0, dtype=torch.float32, device=Q.device))).float()
         swing_denom = ((torch.tensor(1.0, dtype=torch.float32, device=Q.device) - dutycycle) * T * (exp_pos + torch.tensor(1.0, dtype=torch.float32, device=Q.device))).float()
